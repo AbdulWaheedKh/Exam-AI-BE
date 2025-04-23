@@ -122,7 +122,7 @@ const upload = multer({
       title: req.body.title || req.file.originalname,
       originalFileName: req.file.originalname,
       extractedText: pdfText,
-      // uploadedBy: req.user._id
+      userId: req.body.userId,
     });
 
     await pdfRawData.save();
