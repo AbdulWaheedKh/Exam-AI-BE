@@ -30,6 +30,8 @@ app.use('/api/subjects', require('./app/routes/subject.router'));
 app.use('/api/chapters', require('./app/routes/chapter.router'));
 app.use('/api/enrollment', require('./app/routes/enrollment.router'));
 app.use('/api/quizzes', require('./app/routes/quiz.router'));
+app.use('/api/pdf-quiz', require('./app/routes/pdfQuiz.router'));
+app.use('/api/pdf-raw', require('./app/routes/pdfRawData.router'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

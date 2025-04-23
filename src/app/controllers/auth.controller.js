@@ -3,9 +3,9 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 // Register a new user
-exports.register = async (req, res) => {
+const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { username, email, password, role } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -13,28 +13,25 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     // Create new user
     const user = new User({
-      username : name,
+      username,
       email,
-      password: hashedPassword,
+      password,
       role: role || 'student'
     });
 
     await user.save();
 
-    // Create token
+    // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { userId: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '24h' }
     );
 
     res.status(201).json({
+      message: 'User registered successfully',
       token,
       user: {
         id: user._id,
@@ -44,35 +41,36 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error registering user', error: error.message });
   }
 };
 
 // Login user
-exports.login = async (req, res) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
+    // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Validate password
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Check password
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Create token
+    // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { userId: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '24h' }
     );
 
     res.json({
+      message: 'Login successful',
       token,
       user: {
         id: user._id,
@@ -82,37 +80,57 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 };
 
-// Logout user
-exports.logout = (req, res) => {
-  res.json({ message: 'Logged out successfully' });
+// Logout user (client-side operation, just return success)
+const logout = (req, res) => {
+  res.json({ message: 'Logout successful' });
 };
 
 // Get user profile
-exports.getProfile = async (req, res) => {
+const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user._id)
+      .select('-password')
+      .populate('enrolledClasses', 'name description');
+
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error fetching profile', error: error.message });
   }
 };
 
 // Update user profile
-exports.updateProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
   try {
-    const { username, email } = req.body;
-    const user = await User.findById(req.user.id);
+    const { username, email, password } = req.body;
+    const updates = {};
 
-    if (username) user.username = username;
-    if (email) user.email = email;
+    if (username) updates.username = username;
+    if (email) updates.email = email;
+    if (password) updates.password = password;
 
-    await user.save();
-    res.json({ message: 'Profile updated successfully', user });
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    res.json({
+      message: 'Profile updated successfully',
+      user
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error updating profile', error: error.message });
   }
+};
+
+module.exports = {
+  register,
+  login,
+  logout,
+  getProfile,
+  updateProfile
 }; 
