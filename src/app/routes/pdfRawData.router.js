@@ -176,9 +176,10 @@ const upload = multer({
  *         description: Error fetching PDF data
  */
 // router.get('/', authenticateToken, async (req, res) => {
-router.get('/', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const pdfData = await PdfRawData.find()
+    const { id } = req.params;
+    const pdfData = await PdfRawData.find({userId : id})
       .select('title originalFileName createdAt')
       .sort({ createdAt: -1 });
 
