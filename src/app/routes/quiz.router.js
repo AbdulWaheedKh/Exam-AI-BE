@@ -137,7 +137,8 @@ router.get('/chapter/:chapterId', getQuizzesByChapter);
  *       403:
  *         description: Forbidden - Admin access required
  */
-router.post('/generate/:chapterId', authenticate, authorizeAdmin, generateQuizFromChapter);
+// router.post('/generate/:chapterId', authenticate, authorizeAdmin, generateQuizFromChapter);
+router.get('/:id/userId/:userId', generateQuizFromChapter);
 
 /**
  * @swagger

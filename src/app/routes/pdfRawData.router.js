@@ -239,4 +239,33 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+/**
+ * Generate quiz from chapter
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+router.get('/:id/userId/:userId', async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+
+    const quiz = await quizService.generateQuizFromChapter(id, userId);
+
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    res.status(201).json({
+      success: true,
+      data: quiz
+    });
+  } catch (error) {
+    console.error('Error generating quiz:', error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
 module.exports = router; 

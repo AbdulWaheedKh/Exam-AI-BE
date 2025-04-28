@@ -8,7 +8,8 @@ const logger = require('../logger');
  */
 const generateQuizFromChapter = async (req, res) => {
   try {
-    const { chapterId } = req.params;
+    const { id } = req.params;
+    const { userId } = req.params;
     const quiz = await quizService.generateQuizFromChapter(chapterId, req.user.id);
     
     res.status(201).json({
